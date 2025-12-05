@@ -12,9 +12,6 @@ defmodule Day2 do
 
   def procecss_range(range_str) do
     [min, max] = range_str |> String.split("-") |> Enum.map(&String.to_integer/1)
-    # int_min = String.to_integer(min)
-    # int_max = String.to_integer(max)
-    # IO.puts("Count: #{inspect(int_max - int_min)}")
     IO.puts("Count: #{inspect(max - min)}")
 
     Enum.reduce(min..max, [], &keep_if_invalid/2)
@@ -34,11 +31,6 @@ defmodule Day2 do
     factor = 10 |> :math.pow(exponent) |> trunc()
     first_half = num |> div(factor)
     second_half = num |> rem(factor)
-
-    # if num == 989989 do
-    #   dbg({num, digit_count, factor, first_half, second_half, first_half == second_half})
-    #   raise "STOP"
-    # end
 
     first_half == second_half
   end
