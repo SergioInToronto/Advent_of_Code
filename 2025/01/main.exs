@@ -12,6 +12,7 @@ defmodule Main do
     |> Enum.reduce({@dial_start_position, 0}, &spin_and_count/2)
     # |> elem(1)
     |> IO.inspect(label: "Password to open door")
+
     # 8847 is too high.
     # 6707 is too high.
     # 6546 is wrong :'(
@@ -35,7 +36,6 @@ defmodule Main do
   def fix_pos(pos) when pos < 0, do: fix_pos(pos + 100)
   def fix_pos(100), do: 0
   def fix_pos(pos), do: pos
-
 end
 
 Main.run()
