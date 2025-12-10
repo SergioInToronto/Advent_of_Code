@@ -1,13 +1,11 @@
 defmodule Day6 do
   def part1 do
-    # [nums1, nums2, nums3, nums4, operators] =
-      "input.txt"
-      |> File.read!()
-      |> String.split("\n", trim: true)
-      |> Enum.map(&String.split/1)
-      # [nums1, nums2, nums3, nums4, operators]
-      |> Enum.zip_reduce(0, &do_cephalopod_math/2)
-      |> IO.inspect(label: "Sum of all answers")
+    "input.txt"
+    |> File.read!()
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.split/1)
+    |> Enum.zip_reduce(0, &do_cephalopod_math/2)
+    |> IO.inspect(label: "Sum of all answers")
   end
 
   def do_cephalopod_math([num1, num2, num3, num4, operator], acc) do
