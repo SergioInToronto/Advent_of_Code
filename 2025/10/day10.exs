@@ -120,7 +120,9 @@ defmodule Day10 do
 
   def part2 do
     machines = load_machines("experiments.txt")
-    button_count_for_proper_joltage = Enum.map(machines, &find_buttons_to_joltage/1) |> dbg()
+
+    button_count_for_proper_joltage =
+      machines |> Enum.with_index() |> Enum.map(&find_buttons_to_joltage/1)
 
     button_count_for_proper_joltage
     |> Enum.with_index()
@@ -133,15 +135,21 @@ defmodule Day10 do
     |> IO.inspect(label: "Total button presses to set correct joltage for all machines")
   end
 
-  def find_buttons_to_joltage(machine) do
+  def find_buttons_to_joltage({machine, index}) do
+    IO.write("Working on machine #{index + 1}...")
     {_desired_lights, buttons, joltage_requirements} = machine
 
     # Buttons affecting more lights have a higher priority - they lead to a solution with fewer button presses
-    sorted_buttons = buttons |> Enum.sort_by(&length/1) |> Enum.reverse() |> dbg()
+    sorted_buttons = buttons |> Enum.sort_by(&length/1) |> Enum.reverse()
     starting_joltage = Enum.map(joltage_requirements, fn _ -> 0 end)
     starting_count = 0
 
-    recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
+    count =
+      recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
+
+    IO.puts(" #{count} button(s)")
+
+    count
   end
 
   def recur_to_joltage(goal, joltage, buttons, 9999) do
@@ -155,14 +163,18 @@ defmodule Day10 do
     Enum.find_value(buttons, fn btn ->
       result = apply_button_to_joltage(btn, joltage)
       new_count = count + 1
-      any_joltage_exceeded = goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
+
+      any_joltage_exceeded =
+        goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
+
+      if :rand.uniform(10_000_000) == 1, do: IO.inspect(result, label: "Random Joltage so far")
 
       cond do
         result == goal ->
-          dbg("Goal found! #{inspect(goal)} - #{inspect(joltage)} - #{new_count}")
+          # dbg("Goal found! #{inspect(goal)} - #{inspect(joltage)} - #{new_count}")
           new_count
 
-         any_joltage_exceeded ->
+        any_joltage_exceeded ->
           # this button exceeded joltage requirement. Ignore result and try a different button
           nil
 
