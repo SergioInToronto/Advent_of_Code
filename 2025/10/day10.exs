@@ -73,7 +73,6 @@ defmodule Day10 do
     button_presses =
       Enum.find_value(group_sizes, fn group_size ->
         buttons
-        # |> old_bad_solution(group_size)
         |> combo_and_lights(group_size)
         |> Enum.find(fn {_button_presses, lights} -> lights == desired_lights end)
         |> case do
@@ -89,27 +88,18 @@ defmodule Day10 do
     button_presses
   end
 
-  def old_bad_solution(buttons, n) do
-    # Example with 4 buttons, n=2
-    # buttons[0] ++ buttons[1]
-    # buttons[0] ++ buttons[2]
-    # buttons[0] ++ buttons[3]
-    # buttons[1] ++ buttons[2]
-    # buttons[1] ++ buttons[3]
-    # buttons[2] ++ buttons[3]
-    range = 0..(length(buttons) - 1)
-
-    # TODO: flaw in this logic when n > 2
-    # I need an iterator per n. Not just an iterator + length.
-    # For example 5 buttons, combination 1+3+5 is currently not checked
-    button_press_combinations =
-      for start_index <- range, other_index <- range, start_index < other_index do
-        [Enum.at(buttons, start_index)] ++ Enum.slice(buttons, other_index, n - 1)
-      end
-
+  def combo_and_lights(buttons, group_size) do
+    button_press_combinations = combinations(group_size, buttons) # |> dbg()
     resulting_lights = button_press_combinations |> Enum.map(&determine_lights/1)
 
     Enum.zip(button_press_combinations, resulting_lights)
+  end
+
+  def combinations(0, _), do: [[]]
+  def combinations(_, []), do: []
+
+  def combinations(size, [head | tail]) do
+    for(elem <- combinations(size - 1, tail), do: [head | elem]) ++ combinations(size, tail)
   end
 
   def determine_lights(lights) do
@@ -123,22 +113,6 @@ defmodule Day10 do
     |> Enum.sort()
     |> MapSet.new()
     |> MapSet.to_list()
-
-    # |> dbg()
-  end
-
-  def combo_and_lights(buttons, group_size) do
-    button_press_combinations = combinations(group_size, buttons) # |> dbg()
-    resulting_lights = button_press_combinations |> Enum.map(&determine_lights/1)
-
-    Enum.zip(button_press_combinations, resulting_lights)
-  end
-
-  def combinations(0, _), do: [[]]
-  def combinations(_, []), do: []
-
-  def combinations(size, [head | tail]) do
-    for(elem <- combinations(size - 1, tail), do: [head | elem]) ++ combinations(size, tail)
   end
 end
 
