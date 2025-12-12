@@ -23,8 +23,8 @@ defmodule Day10 do
     |> IO.inspect(label: "Total button presses to start all machines")
   end
 
-  def load_machines() do
-    "input.txt" |> File.read!() |> String.split("\n", trim: true) |> Enum.map(&parse_machine/1)
+  def load_machines(filename \\ "input.txt") do
+    filename |> File.read!() |> String.split("\n", trim: true) |> Enum.map(&parse_machine/1)
   end
 
   def parse_machine(text) do
@@ -83,13 +83,14 @@ defmodule Day10 do
         # |> dbg(printable_limit: :infinity, limit: :infinity)
       end)
 
-    if is_nil(button_presses), do: raise "TODO"
+    if is_nil(button_presses), do: raise("TODO")
 
     button_presses
   end
 
   def combo_and_lights(buttons, group_size) do
-    button_press_combinations = combinations(group_size, buttons) # |> dbg()
+    # |> dbg()
+    button_press_combinations = combinations(group_size, buttons)
     resulting_lights = button_press_combinations |> Enum.map(&determine_lights/1)
 
     Enum.zip(button_press_combinations, resulting_lights)
@@ -114,6 +115,76 @@ defmodule Day10 do
     |> MapSet.new()
     |> MapSet.to_list()
   end
+
+  #######################################################################
+
+  def part2 do
+    machines = load_machines("experiments.txt")
+    button_count_for_proper_joltage = Enum.map(machines, &find_buttons_to_joltage/1) |> dbg()
+
+    button_count_for_proper_joltage
+    |> Enum.with_index()
+    |> Enum.each(fn {btn_count, index} ->
+      IO.puts("Machine #{index + 1} requires #{btn_count}")
+    end)
+
+    button_count_for_proper_joltage
+    |> Enum.sum()
+    |> IO.inspect(label: "Total button presses to set correct joltage for all machines")
+  end
+
+  def find_buttons_to_joltage(machine) do
+    {_desired_lights, buttons, joltage_requirements} = machine
+
+    # Buttons affecting more lights have a higher priority - they lead to a solution with fewer button presses
+    sorted_buttons = buttons |> Enum.sort_by(&length/1) |> Enum.reverse() |> dbg()
+    starting_joltage = Enum.map(joltage_requirements, fn _ -> 0 end)
+    starting_count = 0
+
+    recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
+  end
+
+  def recur_to_joltage(goal, joltage, buttons, 9999) do
+    dbg(goal)
+    dbg(joltage)
+    dbg(buttons)
+    raise "Probably didn't work"
+  end
+
+  def recur_to_joltage(goal, joltage, buttons, count) do
+    Enum.find_value(buttons, fn btn ->
+      result = apply_button_to_joltage(btn, joltage)
+      new_count = count + 1
+      any_joltage_exceeded = goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
+
+      cond do
+        result == goal ->
+          dbg("Goal found! #{inspect(goal)} - #{inspect(joltage)} - #{new_count}")
+          new_count
+
+         any_joltage_exceeded ->
+          # this button exceeded joltage requirement. Ignore result and try a different button
+          nil
+
+        true ->
+          # The button did not exceed joltage. Click another button...
+          recur_to_joltage(goal, result, buttons, new_count)
+      end
+    end)
+  end
+
+  def apply_button_to_joltage(button, joltage) do
+    joltage
+    |> Enum.with_index()
+    |> Enum.map(fn {joltage, index} ->
+      if index in button do
+        joltage + 1
+      else
+        joltage
+      end
+    end)
+  end
 end
 
-Day10.part1()
+# Day10.part1()
+Day10.part2()
