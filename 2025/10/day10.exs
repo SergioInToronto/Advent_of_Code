@@ -119,16 +119,11 @@ defmodule Day10 do
   #######################################################################
 
   def part2 do
+    # machines = load_machines()
     machines = load_machines("experiments.txt")
 
     button_count_for_proper_joltage =
       machines |> Enum.with_index() |> Enum.map(&find_buttons_to_joltage/1)
-
-    button_count_for_proper_joltage
-    |> Enum.with_index()
-    |> Enum.each(fn {btn_count, index} ->
-      IO.puts("Machine #{index + 1} requires #{btn_count}")
-    end)
 
     button_count_for_proper_joltage
     |> Enum.sum()
@@ -140,17 +135,34 @@ defmodule Day10 do
     {_desired_lights, buttons, joltage_requirements} = machine
 
     # Buttons affecting more lights have a higher priority - they lead to a solution with fewer button presses
-    sorted_buttons = buttons |> Enum.sort_by(&length/1) |> Enum.reverse()
+    sorted_buttons = sort_by_length_and_rare_indexes(buttons)
     starting_joltage = Enum.map(joltage_requirements, fn _ -> 0 end)
     starting_count = 0
 
-    count =
-      recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
+    count = recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
 
-    IO.puts(" #{count} button(s)")
+    IO.puts(" #{count} buttons")
 
     count
   end
+
+  def score_button(btn, index_counts) do
+    # lower is better
+    btn |> Enum.map(&Map.fetch!(index_counts, &1)) |> Enum.sum()
+  end
+
+  def sort_by_length_and_rare_indexes(buttons) do
+    index_counts =
+      buttons
+      |> List.flatten()
+      |> Enum.reduce(%{}, fn btn, acc -> Map.update(acc, btn, 1, &(&1 + 1)) end)
+
+    # Buttons with the most joltage indexes first (to find fewest button presses required),
+    # Then by least common indexes within the button.
+    buttons |> Enum.sort_by(&{length(&1) * -1, score_button(&1, index_counts)})
+  end
+
+  # def recur_to_joltage(_goal, _joltage, buttons, _count) when length(buttons) > 4, do: :inf
 
   def recur_to_joltage(goal, joltage, buttons, 9999) do
     dbg(goal)
@@ -167,7 +179,7 @@ defmodule Day10 do
       any_joltage_exceeded =
         goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
 
-      if :rand.uniform(10_000_000) == 1, do: IO.inspect(result, label: "Random Joltage so far")
+      # if :rand.uniform(10_000_000) == 1, do: IO.inspect(result, label: "Random Joltage so far")
 
       cond do
         result == goal ->
