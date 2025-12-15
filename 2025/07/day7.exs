@@ -2,7 +2,11 @@ defmodule Day7 do
   def part1 do
     input = File.read!("input.txt")
 
-    input |> String.graphemes() |> Enum.count(& &1 == "^") |> IO.inspect(label: "Total splitters")
+    input
+    |> String.graphemes()
+    |> Enum.count(&(&1 == "^"))
+    |> IO.inspect(label: "Total splitters")
+
     [first_line | lines] = input |> String.split("\n", trim: true)
 
     source_beam_col = first_line |> String.graphemes() |> Enum.find_index(&(&1 == "S"))
@@ -46,7 +50,7 @@ defmodule Day7 do
   end
 
   def turn_off_split_beams(beams, splitter_cols) do
-    beams |> Enum.filter(& &1 not in splitter_cols)
+    beams |> Enum.filter(&(&1 not in splitter_cols))
   end
 
   def turn_on_beams_after_split(beams, splitter_cols) do
