@@ -137,18 +137,14 @@ defmodule Day10 do
     # Buttons affecting more lights have a higher priority - they lead to a solution with fewer button presses
     sorted_buttons = sort_by_length_and_rare_indexes(buttons)
     starting_joltage = Enum.map(joltage_requirements, fn _ -> 0 end)
-    starting_count = 0
+    starting_states = %{starting_joltage => 0}
 
-    count = recur_to_joltage(joltage_requirements, starting_joltage, sorted_buttons, starting_count)
+    # count = recur_to_joltage(joltage_requirements, starting_states, sorted_buttons)
+    count = bfs(joltage_requirements, starting_states, sorted_buttons)
 
     IO.puts(" #{count} buttons")
 
     count
-  end
-
-  def score_button(btn, index_counts) do
-    # lower is better
-    btn |> Enum.map(&Map.fetch!(index_counts, &1)) |> Enum.sum()
   end
 
   def sort_by_length_and_rare_indexes(buttons) do
@@ -162,40 +158,78 @@ defmodule Day10 do
     buttons |> Enum.sort_by(&{length(&1) * -1, score_button(&1, index_counts)})
   end
 
+  def score_button(btn, index_counts) do
+    # lower is better
+    btn |> Enum.map(&Map.fetch!(index_counts, &1)) |> Enum.sum()
+  end
+
+  def bfs(goal, states, buttons) do
+    # Apply every button to every valid state. Store all results (including invalid ones)
+    known_states = Map.keys(states)
+    sanity_check_max_count = goal |> Enum.sum() |> div(2)
+
+    new_states =
+      for {joltage, count} <- states,
+          btn <- buttons,
+          result = apply_button_to_joltage(btn, joltage),
+          not any_joltage_exceeded?(goal, result),
+          result not in known_states,
+          do: %{result => count + 1}
+
+    new_states = Enum.reduce(new_states, %{}, &Map.merge(&2, &1))
+
+    dbg(goal)
+    dbg(Map.size(new_states) + Map.size(states))
+    dbg(new_states)
+
+    new_states
+    |> Map.get(goal)
+    |> case do
+      nil ->
+        # Not found yet. Recur again
+        merged = Map.merge(states, new_states)
+        bfs(goal, merged, buttons)
+
+      value ->
+        # Goal found! No further recursion
+        value
+    end
+  end
+
   # def recur_to_joltage(_goal, _joltage, buttons, _count) when length(buttons) > 4, do: :inf
 
-  def recur_to_joltage(goal, joltage, buttons, 9999) do
-    dbg(goal)
-    dbg(joltage)
-    dbg(buttons)
-    raise "Probably didn't work"
-  end
+  # def recur_to_joltage(goal, joltage, buttons, 9999) do
+  #   dbg(goal)
+  #   dbg(joltage)
+  #   dbg(buttons)
+  #   raise "Probably didn't work"
+  # end
 
-  def recur_to_joltage(goal, joltage, buttons, count) do
-    Enum.find_value(buttons, fn btn ->
-      result = apply_button_to_joltage(btn, joltage)
-      new_count = count + 1
+  # def recur_to_joltage(goal, joltage, buttons, count) do
+  #   Enum.find_value(buttons, fn btn ->
+  #     result = apply_button_to_joltage(btn, joltage)
+  #     new_count = count + 1
 
-      any_joltage_exceeded =
-        goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
+  #     any_joltage_exceeded =
+  #       goal |> Enum.zip(result) |> Enum.any?(fn {desired, actual} -> actual > desired end)
 
-      # if :rand.uniform(10_000_000) == 1, do: IO.inspect(result, label: "Random Joltage so far")
+  #     # if :rand.uniform(10_000_000) == 1, do: IO.inspect(result, label: "Random Joltage so far")
 
-      cond do
-        result == goal ->
-          # dbg("Goal found! #{inspect(goal)} - #{inspect(joltage)} - #{new_count}")
-          new_count
+  #     cond do
+  #       result == goal ->
+  #         # dbg("Goal found! #{inspect(goal)} - #{inspect(joltage)} - #{new_count}")
+  #         new_count
 
-        any_joltage_exceeded ->
-          # this button exceeded joltage requirement. Ignore result and try a different button
-          nil
+  #       any_joltage_exceeded ->
+  #         # this button exceeded joltage requirement. Ignore result and try a different button
+  #         nil
 
-        true ->
-          # The button did not exceed joltage. Click another button...
-          recur_to_joltage(goal, result, buttons, new_count)
-      end
-    end)
-  end
+  #       true ->
+  #         # The button did not exceed joltage. Click another button...
+  #         recur_to_joltage(goal, result, buttons, new_count)
+  #     end
+  #   end)
+  # end
 
   def apply_button_to_joltage(button, joltage) do
     joltage
@@ -207,6 +241,10 @@ defmodule Day10 do
         joltage
       end
     end)
+  end
+
+  def any_joltage_exceeded?(goal, joltages) do
+    goal |> Enum.zip(joltages) |> Enum.any?(fn {desired, actual} -> actual > desired end)
   end
 end
 
