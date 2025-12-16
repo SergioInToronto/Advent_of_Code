@@ -58,6 +58,34 @@ defmodule Day7 do
 
     beams ++ enable_for_cols
   end
+
+  #############################################################################
+
+  def part2() do
+    [first_line | lines] = File.read!("input.txt") |> String.split("\n", trim: true)
+    source_beam_col = first_line |> String.graphemes() |> Enum.find_index(&(&1 == "S"))
+
+    lines
+    |> count_tachyon_beam_paths(source_beam_col)
+    |> IO.inspect(label: "Tachyon beam possible paths")
+  end
+
+  def count_tachyon_beam_paths(lines, source_beam_col) do
+    starting_path_count = 1
+
+    # 1
+    # 2
+    # 4
+    # 10
+    # 16 (some prev beams aren't split)
+    # 22 (some prev beams aren't split)
+    # 34 (some prev beams aren't split, some previously unsplit beams are split here)
+    # line 15 splits beams from line 13 and also line 9. Two possible input paths!
+
+    # for each line:
+    # 1. Find splitters. Ignore unused (same as before)
+  end
 end
 
 Day7.part1()
+Day7.part2()
