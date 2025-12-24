@@ -93,6 +93,46 @@ defmodule Day8 do
 
     MapSet.union(circuit, MapSet.new([box1, box2]))
   end
+
+  #################################################
+
+  def part2 do
+    junction_boxes =
+      File.read!("input.txt")
+      |> String.split("\n", trim: true)
+      |> Enum.map(&String.split(&1, ","))
+      |> Enum.map(fn parts -> Enum.map(parts, &String.to_integer/1) end)
+      |> Enum.map(&List.to_tuple/1)
+
+    IO.inspect("Computing 1000 * 999 neighbour distances...")
+
+    nearest_box_pairs =
+      junction_boxes
+      |> Enum.flat_map(fn box ->
+        junction_boxes
+        |> Enum.reject(&(&1 == box))
+        |> Enum.map(fn neighbour ->
+          distance = compute_distance(box, neighbour)
+          {distance, MapSet.new([box, neighbour])}
+        end)
+      end)
+      # uniq_by to remove duplicates in different order, like {A, B} and {B, A}
+      |> Enum.uniq_by(&elem(&1, 1))
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {_distance, pair} -> MapSet.to_list(pair) end)
+
+    initial_circuits = Enum.map(junction_boxes, & MapSet.new([&1]))
+
+    final_connected_boxes = connect_boxes_until_all_connected(initial_circuits, nearest_box_pairs)
+    [{x1, _, _}, {x2, _, _}] = final_connected_boxes
+    result = x1 * x2
+
+    IO.inspect(result, label: "Result of part2")
+  end
+
+  def connect_boxes_until_all_connected(initial_circuits, nearest_box_pairs) do
+    # TODO
+  end
 end
 
 # Day8.part1()
