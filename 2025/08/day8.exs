@@ -122,16 +122,29 @@ defmodule Day8 do
       |> Enum.map(fn {_distance, pair} -> MapSet.to_list(pair) end)
 
     initial_circuits = Enum.map(junction_boxes, & MapSet.new([&1]))
-
-    final_connected_boxes = connect_boxes_until_all_connected(initial_circuits, nearest_box_pairs)
+    final_connected_boxes = Enum.reduce_while(nearest_box_pairs, initial_circuits, &maybe_connect_more_boxes/2)
     [{x1, _, _}, {x2, _, _}] = final_connected_boxes
     result = x1 * x2
-
     IO.inspect(result, label: "Result of part2")
   end
 
-  def connect_boxes_until_all_connected(initial_circuits, nearest_box_pairs) do
-    # TODO
+  def maybe_connect_more_boxes([box1, box2], circuits) do
+    new_circuits = connect_pair_of_boxes(circuits, box1, box2)
+    case length(new_circuits) do
+      1 -> {:halt, [box1, box2]}
+      _ -> {:cont, new_circuits}
+    end
+  end
+
+  def connect_pair_of_boxes(circuits, box1, box2) do
+    box1_circuit = Enum.find_index(circuits, fn c -> box1 in c end)
+    box2_circuit = Enum.find_index(circuits, fn c -> box2 in c end)
+    case {box1_circuit, box2_circuit} do
+      {index, nil} -> add_boxes_to_circuits(circuits, index, box1, box2)
+      {nil, index} -> add_boxes_to_circuits(circuits, index, box1, box2)
+      {index1, index2} when index1 == index2 -> circuits
+      {index1, index2} -> merge_circuits(circuits, index1, index2)
+    end
   end
 end
 
