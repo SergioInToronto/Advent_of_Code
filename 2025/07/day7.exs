@@ -17,7 +17,6 @@ defmodule Day7 do
   end
 
   def count_splitting_tachyon_beams(lines, source_beam_col) do
-    col_count = String.length(Enum.at(lines, 0))
     starting_beams = [source_beam_col]
     starting_split_count = 0
 
@@ -67,11 +66,50 @@ defmodule Day7 do
 
     lines
     |> count_tachyon_beam_paths(source_beam_col)
-    |> IO.inspect(label: "Tachyon beam possible paths")
+    |> IO.inspect(label: "Tachyon beam possible paths (part2)")
   end
 
   def count_tachyon_beam_paths(lines, source_beam_col) do
+    starting_beam_cols = MapSet.new([source_beam_col])
     starting_path_count = 1
+
+
+    lines
+    # Start at 2 because we handled the first line already
+    |> Enum.with_index(2)
+    |> Enum.reduce({starting_beam_cols, starting_path_count}, fn {line, line_no}, {beams, path_count} ->
+      splitter_cols =
+        line
+        |> String.graphemes()
+        |> Enum.with_index()
+        |> Enum.filter(fn {char, _col} -> char == "^" end)
+        |> Enum.map(fn {_char, col} -> col end)
+
+      touched_splitter_cols = splitter_cols |> Enum.filter(fn val -> val in beams end)
+
+      # TODO: YOU ARE HERE: debug this. touched_splitter_cols is always empty???
+
+      if length(touched_splitter_cols) != length(splitter_cols) do
+        unused_count = length(splitter_cols) - length(touched_splitter_cols)
+        IO.puts("#{unused_count} untouched splitter(s) on line #{line_no}")
+      end
+
+      # new_beam_cols = turn_on_beams_after_split(beams |> MapSet.to_list(), touched_splitter_cols) |> MapSet.new()
+      new_beam_cols = touched_splitter_cols |> Enum.flat_map(fn col -> [col - 1, col + 1] end) |> MapSet.new()
+      disabled_beam_cols = turn_off_split_beams(beams, touched_splitter_cols) |> MapSet.new()
+      merged_paths_count = new_beam_cols |> MapSet.intersection(beams) |> MapSet.size()
+
+      if line_no == 14, do: raise "DEBUGGING"
+
+      resulting_beams = beams |> MapSet.difference(disabled_beam_cols) |> MapSet.union(new_beam_cols)
+      new_path_count = path_count * (2 ** MapSet.size(new_beam_cols)) / (2 ** merged_paths_count)
+
+      IO.puts("Line #{line_no} beams: #{inspect(resulting_beams)}")
+      IO.puts("\t#{merged_paths_count} merge(s)")
+
+      {resulting_beams, new_path_count}
+    end)
+    |> elem(1)
 
     # 1
     # 2
@@ -87,5 +125,5 @@ defmodule Day7 do
   end
 end
 
-Day7.part1()
+# Day7.part1()
 Day7.part2()
