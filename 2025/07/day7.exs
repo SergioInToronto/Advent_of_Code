@@ -73,7 +73,6 @@ defmodule Day7 do
     starting_beam_cols = MapSet.new([source_beam_col])
     starting_path_count = 1
 
-
     lines
     # Start at 2 because we handled the first line already
     |> Enum.with_index(2)
@@ -85,29 +84,34 @@ defmodule Day7 do
         |> Enum.filter(fn {char, _col} -> char == "^" end)
         |> Enum.map(fn {_char, col} -> col end)
 
-      touched_splitter_cols = splitter_cols |> Enum.filter(fn val -> val in beams end)
+      if splitter_cols == [] do
+        # no splitters on this line
+        {beams, path_count}
+      else
+        touched_splitter_cols = splitter_cols |> Enum.filter(fn val -> val in beams end)
 
-      # TODO: YOU ARE HERE: debug this. touched_splitter_cols is always empty???
+        # new_beam_cols = turn_on_beams_after_split(beams |> MapSet.to_list(), touched_splitter_cols) |> MapSet.new()
+        new_beam_cols = touched_splitter_cols |> Enum.flat_map(fn col -> [col - 1, col + 1] end) |> MapSet.new()
+        disabled_beam_cols = beams |> Enum.filter(&(&1 in splitter_cols)) |> MapSet.new()
+        merged_paths_count = new_beam_cols |> MapSet.intersection(beams) |> MapSet.size()
 
-      if length(touched_splitter_cols) != length(splitter_cols) do
-        unused_count = length(splitter_cols) - length(touched_splitter_cols)
-        IO.puts("#{unused_count} untouched splitter(s) on line #{line_no}")
+        resulting_beams = beams |> MapSet.difference(disabled_beam_cols) |> MapSet.union(new_beam_cols)
+        new_path_count = path_count + (2 ** length(touched_splitter_cols)) - MapSet.size(disabled_beam_cols)
+        new_path_count = if merged_paths_count != 0, do: new_path_count - (2 ** merged_paths_count), else: new_path_count
+
+        IO.puts("Line #{line_no} beams: #{inspect(resulting_beams)}")
+        IO.puts("\tNEW: #{inspect(new_beam_cols)}\n\tDISABLED: #{inspect(disabled_beam_cols)}")
+        IO.puts("\t#{merged_paths_count} merge(s)")
+        if length(touched_splitter_cols) != length(splitter_cols) do
+          unused_count = length(splitter_cols) - length(touched_splitter_cols)
+          IO.puts("\t#{unused_count} untouched splitter(s) on line #{line_no}")
+        end
+        IO.puts("\tPATHS: #{new_path_count}")
+
+        if line_no == 9, do: raise "DEBUGGING"
+
+        {resulting_beams, new_path_count}
       end
-
-      # new_beam_cols = turn_on_beams_after_split(beams |> MapSet.to_list(), touched_splitter_cols) |> MapSet.new()
-      new_beam_cols = touched_splitter_cols |> Enum.flat_map(fn col -> [col - 1, col + 1] end) |> MapSet.new()
-      disabled_beam_cols = turn_off_split_beams(beams, touched_splitter_cols) |> MapSet.new()
-      merged_paths_count = new_beam_cols |> MapSet.intersection(beams) |> MapSet.size()
-
-      if line_no == 14, do: raise "DEBUGGING"
-
-      resulting_beams = beams |> MapSet.difference(disabled_beam_cols) |> MapSet.union(new_beam_cols)
-      new_path_count = path_count * (2 ** MapSet.size(new_beam_cols)) / (2 ** merged_paths_count)
-
-      IO.puts("Line #{line_no} beams: #{inspect(resulting_beams)}")
-      IO.puts("\t#{merged_paths_count} merge(s)")
-
-      {resulting_beams, new_path_count}
     end)
     |> elem(1)
 
