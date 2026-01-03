@@ -16,10 +16,12 @@ defmodule Day11 do
     # Don't explore any paths that lead back to "you"
 
 
-    nodes_from_you = device_connections["you"] |> dbg()
+    # nodes_from_you = device_connections["you"]
+    # nodes_from_you = Map.take(device_connections, ["you"]) |> dbg()
 
-    initial_stack = [nodes_from_you]
-    initial_known_paths = [] # [[:you]]
+    # initial_stack = [nodes_from_you]
+    initial_stack = ["you"]
+    initial_known_paths = [["you"]]
     # Sanity check - limit path length to 1000 steps
     iter = 0..1_000
     Enum.reduce_while(iter, {initial_stack, initial_known_paths}, & process(&1, &2, device_connections))
@@ -32,13 +34,30 @@ defmodule Day11 do
     dbg({device, neighbours})
   end
 
-  def process(step, {stack, known_paths}, device_connections) do
+  def process(step, {[node | stack], known_paths}, device_connections) do
+    relevant_paths = known_paths
+    |> Enum.filter(& Enum.at(&1, -1) == node) # paths where last node is `node`
+
+    neighbours = device_connections[node]
+
     dbg(step)
-    dbg(stack)
+    # dbg(stack)
     dbg(known_paths)
-    dbg(device_connections)
+    dbg(relevant_paths)
+    # dbg(device_connections)
+    dbg(node)
+    dbg(neighbours)
 
     raise "WIP"
+  end
+
+  def append_nodes(items_to_add, stack) do
+    # Reverse, prepend, and reverse again.
+    # This tested twice as fast on a stack of 1000 adding 20 nodes
+    # ...would be nice if the VM or compiler handled this so I didn't have to think about it...
+    items_to_add
+    |> Enum.reduce(Enum.reverse(stack), & [&1 | &2])
+    |> Enum.reverse()
   end
 end
 
