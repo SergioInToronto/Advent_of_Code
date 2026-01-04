@@ -1,7 +1,9 @@
 defmodule Day11 do
   @device_connections_regex ~r/([[:alpha:]]{3}): (.*)/
 
-  @step_limit 10_000
+  @step_limit 1_000_000
+  @start_node_part1 "you"
+  @start_node_part2 "svr"
 
   def part1 do
     # "experiments.txt"
@@ -12,9 +14,9 @@ defmodule Day11 do
       |> Enum.map(&parse_device_connections/1)
       |> Enum.reduce(%{}, fn {node, neighbours}, acc -> Map.put(acc, node, neighbours) end)
 
-    initial_stack = ["you"]
-    initial_known_paths = MapSet.new([["you"]])
-    # Sanity check - limit path length to 1000 steps
+    initial_stack = [@start_node_part1]
+    initial_known_paths = MapSet.new([[@start_node_part1]])
+    # Sanity check - limit path length
     iter = 0..@step_limit
 
     iter
@@ -37,6 +39,11 @@ defmodule Day11 do
 
   def process(_, {[], known_paths}, _), do: {:halt, known_paths}
   def process(@step_limit, _, _), do: {:halt, "Step limit exceeded!"}
+  def process(_, {["out" | stack], known_paths}, _) do
+    IO.write(".")
+
+    {:cont, {stack, known_paths}}
+  end
 
   def process(step, {[node | stack], known_paths}, device_connections) do
     relevant_paths =
@@ -48,7 +55,11 @@ defmodule Day11 do
 
     case neighbours do
       nil when node == "out" ->
-        dbg("Found exit path: #{inspect(relevant_paths)}")
+        # dbg("Found exit path: #{inspect(relevant_paths)}")
+        IO.puts("Found exit path with #{step} steps")
+        dbg(stack)
+        if step > 5, do: known_paths |> Enum.filter(& &1 |> hd() == "out") |> IO.inspect(printable_limit: :infinity, limit: :infinity)
+        if step > 500, do: raise "WIP"
         {:cont, {stack, known_paths}}
 
       nil ->
@@ -69,14 +80,33 @@ defmodule Day11 do
     end
   end
 
-  def append_nodes(items_to_add, stack) do
-    # Reverse, prepend, and reverse again.
-    # This tested twice as fast on a stack of 1000 adding 20 nodes
-    # ...would be nice if the VM or compiler handled this so I didn't have to think about it...
-    items_to_add
-    |> Enum.reduce(Enum.reverse(stack), &[&1 | &2])
-    |> Enum.reverse()
+  ####################################################
+
+  def part2 do
+    device_connections =
+      "input.txt"
+      |> File.read!()
+      |> String.split("\n", trim: true)
+      |> Enum.map(&parse_device_connections/1)
+      |> Enum.reduce(%{}, fn {node, neighbours}, acc -> Map.put(acc, node, neighbours) end)
+
+    initial_stack = [@start_node_part2]
+    initial_known_paths = MapSet.new([[@start_node_part2]])
+    # Sanity check - limit path length
+    iter = 0..@step_limit
+
+    iter
+    |> Enum.reduce_while(
+      {initial_stack, initial_known_paths},
+      &process(&1, &2, device_connections)
+    )
+    |> Enum.filter(&(&1 |> hd() == "out"))
+    |> Enum.filter(&("dac" in &1 and "fft" in &1))
+    # |> dbg()
+    |> Enum.count()
+    |> IO.inspect(label: "Exit path count")
   end
 end
 
-Day11.part1()
+# Day11.part1()
+Day11.part2()
